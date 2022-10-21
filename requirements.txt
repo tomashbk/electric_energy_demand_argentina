@@ -2,3 +2,5 @@ pandas
 matplotlib
 statsmodels
 scikit-learn
+pmdarima
+seaborn
