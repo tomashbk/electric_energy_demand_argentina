@@ -1,7 +1,8 @@
 from statsmodels.tsa.stattools import adfuller
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+from scipy.signal import periodogram
 
 def is_stationary(data):
     result = adfuller(data)
@@ -43,11 +44,10 @@ def seasonal_plot(X, y, period, freq, ax=None):
     return ax
 
 def plot_periodogram(ts, detrend='linear', ax=None):
-    from scipy.signal import periodogram
-    fs = pd.Timedelta("1Y") / pd.Timedelta("1D")
+    # fs = pd.Timedelta("1Y") / pd.DateOffset(months=1)
     freqencies, spectrum = periodogram(
         ts,
-        fs=fs,
+        fs=12,
         detrend=detrend,
         window="boxcar",
         scaling='spectrum',
@@ -56,17 +56,14 @@ def plot_periodogram(ts, detrend='linear', ax=None):
         _, ax = plt.subplots()
     ax.step(freqencies, spectrum, color="purple")
     ax.set_xscale("log")
-    ax.set_xticks([1, 2, 4, 6, 12, 26, 52, 104])
+    ax.set_xticks([1, 2, 4, 6, 12])
     ax.set_xticklabels(
         [
             "Annual (1)",
             "Semiannual (2)",
             "Quarterly (4)",
             "Bimonthly (6)",
-            "Monthly (12)",
-            "Biweekly (26)",
-            "Weekly (52)",
-            "Semiweekly (104)",
+            "Monthly (12)"
         ],
         rotation=30,
     )
