@@ -2,6 +2,7 @@ from statsmodels.tsa.stattools import adfuller
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+import numpy as np
 from scipy.signal import periodogram
 
 def is_stationary(data):
@@ -44,10 +45,10 @@ def seasonal_plot(X, y, period, freq, ax=None):
     return ax
 
 def plot_periodogram(ts, detrend='linear', ax=None):
-    # fs = pd.Timedelta("1Y") / pd.DateOffset(months=1)
+    fs = pd.Timedelta("1Y") / pd.Timedelta("1D")
     freqencies, spectrum = periodogram(
         ts,
-        fs=12,
+        fs=fs,
         detrend=detrend,
         window="boxcar",
         scaling='spectrum',
@@ -56,14 +57,17 @@ def plot_periodogram(ts, detrend='linear', ax=None):
         _, ax = plt.subplots()
     ax.step(freqencies, spectrum, color="purple")
     ax.set_xscale("log")
-    ax.set_xticks([1, 2, 4, 6, 12])
+    ax.set_xticks([1, 2, 4, 6, 12, 26, 52, 104])
     ax.set_xticklabels(
         [
             "Annual (1)",
             "Semiannual (2)",
             "Quarterly (4)",
             "Bimonthly (6)",
-            "Monthly (12)"
+            "Monthly (12)",
+            "Biweekly (26)",
+            "Weekly (52)",
+            "Semiweekly (104)",
         ],
         rotation=30,
     )
@@ -71,3 +75,23 @@ def plot_periodogram(ts, detrend='linear', ax=None):
     ax.set_ylabel("Variance")
     ax.set_title("Periodogram")
     return ax
+
+def four_months_period(data):
+    array_four_months_period = np.array([])
+    for i in data.month:
+        if i <= 4:
+            array_four_months_period = np.append(array_four_months_period, [1])
+        if i > 4 and i <= 8:
+            array_four_months_period = np.append(array_four_months_period, [2])
+        if i > 8 and i <= 12:
+            array_four_months_period = np.append(array_four_months_period, [3])
+    return array_four_months_period
+
+def six_months_period(data):
+    array_six_months_period = np.array([])
+    for i in data.month:
+        if i <= 6:
+            array_six_months_period = np.append(array_six_months_period, [1])
+        if i > 6 and i <= 12:
+            array_six_months_period = np.append(array_six_months_period, [2])
+    return array_six_months_period
