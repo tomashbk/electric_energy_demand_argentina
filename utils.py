@@ -4,6 +4,9 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 from scipy.signal import periodogram
+import math
+from matplotlib.offsetbox import AnchoredText
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 
 def is_stationary(data):
     result = adfuller(data)
@@ -95,3 +98,73 @@ def six_months_period(data):
         if i > 6 and i <= 12:
             array_six_months_period = np.append(array_six_months_period, [2])
     return array_six_months_period
+
+def lagplot(x, y=None, lag=1, standardize=False, ax=None, **kwargs):
+    x_ = x.shift(lag)
+    if standardize:
+        x_ = (x_ - x_.mean()) / x_.std()
+    if y is not None:
+        y_ = (y - y.mean()) / y.std() if standardize else y
+    else:
+        y_ = x
+    corr = y_.corr(x_)
+    if ax is None:
+        fig, ax = plt.subplots()
+    scatter_kws = dict(
+        alpha=0.75,
+        s=3,
+    )
+    line_kws = dict(color='C3', )
+    ax = sns.regplot(x=x_,
+                     y=y_,
+                     scatter_kws=scatter_kws,
+                     line_kws=line_kws,
+                     lowess=True,
+                     ax=ax,
+                     **kwargs)
+    at = AnchoredText(
+        f"{corr:.2f}",
+        prop=dict(size="large"),
+        frameon=True,
+        loc="upper left",
+    )
+    at.patch.set_boxstyle("square, pad=0.0")
+    ax.add_artist(at)
+    ax.set(title=f"Lag {lag}", xlabel=x_.name, ylabel=y_.name)
+    return ax
+
+def plot_lags(x, y=None, lags=6, nrows=1, lagplot_kwargs={}, **kwargs):
+    kwargs.setdefault('nrows', nrows)
+    kwargs.setdefault('ncols', math.ceil(lags / nrows))
+    kwargs.setdefault('figsize', (kwargs['ncols'] * 2, nrows * 2 + 0.5))
+    fig, axs = plt.subplots(sharex=True, sharey=True, squeeze=False, **kwargs)
+    for ax, k in zip(fig.get_axes(), range(kwargs['nrows'] * kwargs['ncols'])):
+        if k + 1 <= lags:
+            ax = lagplot(x, y, lag=k + 1, ax=ax, **lagplot_kwargs)
+            ax.set_title(f"Lag {k + 1}", fontdict=dict(fontsize=14))
+            ax.set(xlabel="", ylabel="")
+        else:
+            ax.axis('off')
+    plt.setp(axs[-1, :], xlabel=x.name)
+    plt.setp(axs[:, 0], ylabel=y.name if y is not None else x.name)
+    fig.tight_layout(w_pad=0.1, h_pad=0.1)
+    return fig
+
+def get_accuracy_tree(type, max_leaf_nodes, X_train, X_test, y_train, y_test):
+    """
+    Function to calculate the Accuracy of different 
+    Decision Tree given a number of max_leaf_nodes.
+    """
+    if type == "classifier":
+        model = DecisionTreeClassifier(max_leaf_nodes = max_leaf_nodes, random_state=0)
+        model.fit(X_train, y_train)
+        # preds_val = model.predict(X_test)
+        # score = accuracy_score(y_test, preds_val)
+        score = model.score(X_test, y_test)
+    if type == "regression":
+        model = DecisionTreeRegressor(max_leaf_nodes = max_leaf_nodes, random_state=0)
+        model.fit(X_train, y_train)
+        score = model.score(X_test, y_test)
+    
+
+    return score
