@@ -7,6 +7,7 @@ from scipy.signal import periodogram
 import math
 from matplotlib.offsetbox import AnchoredText
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
+from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 
 def is_stationary(data):
     result = adfuller(data)
@@ -168,3 +169,48 @@ def get_accuracy_tree(type, max_leaf_nodes, X_train, X_test, y_train, y_test):
     
 
     return score
+
+def correlation_matrix(df: pd.DataFrame):
+    """
+    Function to calculate and plot
+    correlation matrix of a DataFrame.
+    """
+    # CREATE THE MATRIX
+    matrix = df.corr()
+    
+    # CREATE CMAP
+    cmap = sns.diverging_palette(250, 15, s=75, l=40,
+                             n=9, center="light", as_cmap=True)
+    # CREATE A MASK
+    mask = np.triu(np.ones_like(matrix, dtype=bool))
+    
+    # MAKE FIGSIZE BIGGER
+    fig, ax = plt.subplots(figsize=(16,12))
+    
+    # PLOT THE MATRIX
+    _ = sns.heatmap(matrix, mask=mask, center=0, annot=True,
+             fmt='.2f', square=True, cmap=cmap, ax=ax)
+
+def make_mi_scores(X, y, type):
+    """
+    Function to calculate Mutual Information scores.
+    """
+    if type == "classifier":
+        mi_scores = mutual_info_classif(X, y)
+    if type == "regression":
+        mi_scores = mutual_info_regression(X, y)
+
+    mi_scores = pd.Series(mi_scores, name="MI Scores", index=X.columns)
+    mi_scores = mi_scores.sort_values(ascending=False)
+    return mi_scores
+
+def plot_scores(scores, title):
+    """
+    Function to plot Scores.
+    """
+    scores = scores.sort_values(ascending=True)
+    width = np.arange(len(scores))
+    ticks = list(scores.index)
+    plt.barh(width, scores)
+    plt.yticks(width, ticks)
+    plt.title(title)

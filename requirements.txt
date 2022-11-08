@@ -5,3 +5,6 @@ scikit-learn
 pmdarima
 seaborn
 xgboost
+lightgbm
+scikit-optimize
+tensorflow
